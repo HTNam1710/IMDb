@@ -12,6 +12,7 @@ services:
     volumes:
       - imdb_pgdata:/var/lib/postgresql/data
       - ../sql/init:/docker-entrypoint-initdb.d:ro
+      - ../sql:/sql:ro
       - ../data:/data
     command: >
       postgres -c work_mem=${PG_WORK_MEM:-64MB}
