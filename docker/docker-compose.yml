@@ -25,12 +25,21 @@ services:
     image: dpage/pgadmin4:8
     container_name: imdb_pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@local
+      PGADMIN_DEFAULT_EMAIL: admin@local.test
       PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_CHECK_EMAIL_DELIVERABILITY: "False"
+      PGADMIN_CONFIG_ALLOW_SPECIAL_EMAIL_DOMAINS: "['localhost','localdomain','local','test','local.test']"
+
     ports:
       - "${PGADMIN_PORT_ON_HOST:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
+    restart: unless-stopped
 
 volumes:
   imdb_pgdata:
+    name: docker_imdb_pgdata
+  pgadmin_data:
+    name: docker_pgadmin_data
