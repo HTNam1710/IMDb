@@ -5,8 +5,6 @@ FILES = [
   "title.basics.tsv.gz",
   "title.ratings.tsv.gz",
   "title.crew.tsv.gz",
-  "title.principals.tsv.gz",
-  "name.basics.tsv.gz",
 ]
 BASE_URL = "https://datasets.imdbws.com/"
 
