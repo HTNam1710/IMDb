@@ -3,7 +3,8 @@ import psycopg2
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-UNPACK = ROOT / "data" / "unpacked"
+USE_SLIM = os.getenv("IMDB_USE_SLIM", "1") == "1"
+UNPACK = ROOT / "data" / ("unpacked_slim" if USE_SLIM else "unpacked")
 
 conn = psycopg2.connect(
     host="localhost",
@@ -21,10 +22,6 @@ files_map = {
                           "(tconst, averageRating, numVotes)"),
     "title.crew.tsv": ("imdb_staging.title_crew",
                        "(tconst, directors, writers)"),
-    "title.principals.tsv": ("imdb_staging.title_principals",
-                             "(tconst, ordering, nconst, category, job, characters)"),
-    "name.basics.tsv": ("imdb_staging.name_basics",
-                        "(nconst, primaryName, birthYear, deathYear, primaryProfession, knownForTitles)"),
 }
 
 def write_noheader(src_path, dst_path):
@@ -39,22 +36,20 @@ with conn.cursor() as cur:
     cur.execute("""
       TRUNCATE imdb_staging.title_basics,
                imdb_staging.title_ratings,
-               imdb_staging.title_crew,
-               imdb_staging.title_principals,
-               imdb_staging.name_basics;
+               imdb_staging.title_crew;
     """)
 
     for fname, (table, cols) in files_map.items():
         local_src = UNPACK / fname
         if not local_src.exists():
-            raise FileNotFoundError(f"Missing file: {local_src}. Hãy chạy scripts/download_imdb.py trước.")
+            raise FileNotFoundError(f"Missing file: {local_src}. Hãy chạy preprocess trước.")
 
         # Tạo file KHÔNG header để server-side COPY (TEXT mode)
         local_noheader = UNPACK / (fname + ".noheader")
         write_noheader(local_src, local_noheader)
 
         # Đường dẫn TRONG container (../data đã mount thành /data)
-        container_path = PurePosixPath("/data") / "unpacked" / (fname + ".noheader")
+        container_path = PurePosixPath("/data") / ("unpacked_slim" if USE_SLIM else "unpacked") / (fname + ".noheader")
 
         print(f"COPY {container_path} -> {table}")
         cur.execute(f"""
